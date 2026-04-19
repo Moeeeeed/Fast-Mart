@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="24dp"
+    android:background="@color/white">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hintEmail"
+        android:textColor="@color/textGray"/>
+    <EditText
+        android:id="@+id/etSignupEmail"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/edit_text_bg"
+        android:inputType="textEmailAddress"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hintPassword"
+        android:textColor="@color/textGray"/>
+    <EditText
+        android:id="@+id/etSignupPassword"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/edit_text_bg"
+        android:inputType="textPassword"
+        android:padding="12dp"
+        android:layout_marginBottom="16dp"/>
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/hintVerifyPassword"
+        android:textColor="@color/textGray"/>
+    <EditText
+        android:id="@+id/etSignupVerify"
+        android:layout_width="match_parent"
+        android:layout_height="50dp"
+        android:background="@drawable/edit_text_bg"
+        android:inputType="textPassword"
+        android:padding="12dp"
+        android:layout_marginBottom="24dp"/>
+
+    <Button
+        android:id="@+id/btnSignup"
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:text="@string/btnSignup"
+        android:backgroundTint="@color/bgDark"
+        android:textColor="@color/white"
+        android:textSize="18sp"/>
+
+</LinearLayout>

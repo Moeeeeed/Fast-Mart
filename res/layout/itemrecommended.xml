@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_margin="8dp"
+    app:cardCornerRadius="16dp"
+    app:cardElevation="2dp"
+    app:cardBackgroundColor="@color/bgLightGray">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/ivProductImage"
+            android:layout_width="120dp"
+            android:layout_height="120dp"
+            android:scaleType="centerInside"
+            android:src="@drawable/i4"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <ImageView
+            android:id="@+id/ivHeart"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/heart"
+            android:padding="5dp"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/tvProductPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="$0.00"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="12dp"
+            app:layout_constraintTop_toBottomOf="@id/ivProductImage"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/tvProductName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Product Name"
+            android:textColor="@color/black"
+            android:textStyle="bold"
+            android:maxLines="2"
+            android:layout_marginTop="4dp"
+            app:layout_constraintTop_toBottomOf="@id/tvProductPrice"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+        <TextView
+            android:id="@+id/tvProductDesc"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="Product Description"
+            android:textColor="@color/textGray"
+            android:textSize="12sp"
+            android:layout_marginTop="4dp"
+            app:layout_constraintTop_toBottomOf="@id/tvProductName"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+        <ImageView
+            android:id="@+id/ivHomeCart"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:padding="4dp"
+            android:src="@drawable/cart"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="16dp"
+    android:layout_marginVertical="8dp"
+    app:cardCornerRadius="12dp"
+    app:cardElevation="2dp">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="12dp">
+
+        <ImageView
+            android:id="@+id/ivCartImage"
+            android:layout_width="80dp"
+            android:layout_height="80dp"
+            android:scaleType="centerInside"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+        <TextView
+            android:id="@+id/tvCartName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:textColor="@color/black"
+            android:layout_marginStart="12dp"
+            app:layout_constraintTop_toTopOf="@id/ivCartImage"
+            app:layout_constraintStart_toEndOf="@id/ivCartImage"
+            app:layout_constraintEnd_toStartOf="@id/ivCartDelete" />
+
+        <TextView
+            android:id="@+id/tvCartPrice"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/black"
+            android:layout_marginTop="4dp"
+            app:layout_constraintTop_toBottomOf="@id/tvCartName"
+            app:layout_constraintStart_toStartOf="@id/tvCartName" />
+
+        <ImageView
+            android:id="@+id/btnMinus"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/remove" android:background="#EEEEEE"
+            android:padding="4dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@id/tvCartPrice"
+            app:layout_constraintStart_toStartOf="@id/tvCartName" />
+
+        <TextView
+            android:id="@+id/tvQuantity"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="1"
+            android:textSize="16sp"
+            android:textStyle="bold"
+            android:textColor="@color/black"
+            android:layout_marginHorizontal="12dp"
+            app:layout_constraintTop_toTopOf="@id/btnMinus"
+            app:layout_constraintBottom_toBottomOf="@id/btnMinus"
+            app:layout_constraintStart_toEndOf="@id/btnMinus" />
+
+        <ImageView
+            android:id="@+id/btnPlus"
+            android:layout_width="28dp"
+            android:layout_height="28dp"
+            android:src="@drawable/add"
+            android:background="#EEEEEE"
+            android:padding="4dp"
+            app:layout_constraintTop_toTopOf="@id/btnMinus"
+            app:layout_constraintStart_toEndOf="@id/tvQuantity" />
+
+        <ImageView
+            android:id="@+id/ivCartDelete"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:padding="4dp"
+            android:src="@drawable/vert"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.cardview.widget.CardView>

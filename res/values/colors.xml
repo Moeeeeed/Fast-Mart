@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <color name="purple">#800080</color>
+    <color name="magenta">#FF00FF</color>
+
+    <color name="bgDark">#121212</color>
+    <color name="textGray">#808080</color>
+    <color name="priceRed">#FF0000</color>
+    <color name="bgLightGray">#F5F5F5</color>
+    <color name="dividerGray">#E0E0E0</color>
+
+    <color name="tab_selector_color">#FFFFFF</color>
+    <color name="tab_selected_color">#000000</color>
+</resources>
