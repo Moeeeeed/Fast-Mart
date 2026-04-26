@@ -1,7 +1,5 @@
 package com.example.a2.adapters;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -10,14 +8,19 @@ import android.widget.TextView;
 import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
+import com.bumptech.glide.Glide;
 import com.example.a2.R;
+import com.example.a2.database.FastMartDatabase;
 import com.example.a2.models.product;
 import java.util.List;
 
 public class RecommendedAdapter extends RecyclerView.Adapter<RecommendedAdapter.ViewHolder> {
+    
     private List<product> productList;
     private OnFavouriteClickListener favListener;
     private OnCartClickListener cartListener;
+    private FastMartDatabase db;
 
     public interface OnFavouriteClickListener {
         void onFavouriteClick(boolean isAdded);
@@ -37,21 +40,29 @@ public class RecommendedAdapter extends RecyclerView.Adapter<RecommendedAdapter.
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.itemrecommended, parent, false);
+        db = new FastMartDatabase(parent.getContext());
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         product product = productList.get(position);
-        holder.ivProductImage.setImageResource(product.getImageResId());
+        
+        if (product.getImageUrl() != null && !product.getImageUrl().isEmpty()) {
+            Glide.with(holder.itemView.getContext())
+                .load(product.getImageUrl())
+                .placeholder(R.drawable.vert) 
+                .into(holder.ivProductImage);
+        } else {
+            holder.ivProductImage.setImageResource(product.getImageResId());
+        }
+
         holder.tvProductName.setText(product.getName());
         holder.tvProductPrice.setText(product.getPrice());
         holder.tvProductDesc.setText(product.getDescription());
 
         updateHeartIcon(holder.ivHeart, product.isFavourite());
 
-        // Favourite logic
-        SharedPreferences favPrefs = holder.itemView.getContext().getSharedPreferences("MyFavourites", Context.MODE_PRIVATE);
         holder.ivHeart.setOnClickListener(v -> {
             boolean newState = !product.isFavourite();
             product.setFavourite(newState);
@@ -61,34 +72,31 @@ public class RecommendedAdapter extends RecyclerView.Adapter<RecommendedAdapter.
                 favListener.onFavouriteClick(newState);
             }
 
-            if (newState) {
-                String metaData = product.getName() + "," + product.getPrice() + "," + product.getDescription() + "," + product.getImageResId();
-                favPrefs.edit().putString("fav_" + product.getId(), metaData).apply();
-            } else {
-                favPrefs.edit().remove("fav_" + product.getId());
-                favPrefs.edit().apply();
+            try {
+                db.open();
+                if (newState) {
+                    db.addFavourite(String.valueOf(product.getId()), product.getName(), product.getPrice(), product.getImageResId(), product.getImageUrl());
+                } else {
+                    db.removeFavourite(String.valueOf(product.getId()));
+                }
+                db.close();
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
 
-        // Cart logic
         holder.ivHomeCart.setOnClickListener(v -> {
-            SharedPreferences cartPrefs = v.getContext().getSharedPreferences("MyCart", Context.MODE_PRIVATE);
-            
-            int qty = 1;
-            String existingData = cartPrefs.getString("cart_" + product.getId(), null);
-            if (existingData != null) {
-                String[] parts = existingData.split(",");
-                if (parts.length == 5) qty = Integer.parseInt(parts[4]) + 1;
-            }
+            try {
+                db.open();
+                db.addToCart(String.valueOf(product.getId()), product.getName(), product.getPrice(), product.getImageResId(), product.getImageUrl(), 1);
+                db.close();
+                Toast.makeText(v.getContext(), v.getContext().getString(R.string.addedToCartMsg), Toast.LENGTH_SHORT).show();
 
-            String cartData = product.getName() + "," + product.getPrice() + "," + 
-                              product.getDescription() + "," + product.getImageResId() + "," + qty;
-            
-            cartPrefs.edit().putString("cart_" + product.getId(), cartData).apply();
-            Toast.makeText(v.getContext(), "Added to Cart!", Toast.LENGTH_SHORT).show();
-
-            if (cartListener != null) {
-                cartListener.onCartClick();
+                if (cartListener != null) {
+                    cartListener.onCartClick();
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
         });
     }

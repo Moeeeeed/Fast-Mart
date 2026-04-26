@@ -1,7 +1,6 @@
 package com.example.a2.fragments;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -14,8 +13,8 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.a2.R;
 import com.example.a2.adapters.FavouriteAdapter;
+import com.example.a2.database.FastMartDatabase;
 import com.example.a2.models.product;
-import com.example.a2.models.productsdata;
 import com.example.a2.CartBadgeListener;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,20 +24,20 @@ public class FavouritesFragment extends Fragment {
     RecyclerView rvFavourites;
     FavouriteAdapter favouritesAdapter;
     List<product> favouriteProducts;
+    FastMartDatabase db;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Sets up the user interface for the Favorites screen.
         View view = inflater.inflate(R.layout.fragmentfavourites, container, false);
 
         rvFavourites = view.findViewById(R.id.rvFavourites);
         rvFavourites.setLayoutManager(new LinearLayoutManager(getContext()));
-
+        
+        db = new FastMartDatabase(getContext());
         favouriteProducts = new ArrayList<>();
-        // Because MainActivity implements CartBadgeListener, we can safely cast getActivity()
+        
         CartBadgeListener listener = (CartBadgeListener) getActivity();
-
         favouritesAdapter = new FavouriteAdapter(getContext(), favouriteProducts, listener);
         rvFavourites.setAdapter(favouritesAdapter);
 
@@ -47,27 +46,35 @@ public class FavouritesFragment extends Fragment {
 
     @Override
     public void onResume() {
-        // Refreshes the list every time the user comes back to this tab.
         super.onResume();
-        favouriteProducts.clear();
-        favouriteProducts.addAll(loadFavouritesFromPrefs());
-        favouritesAdapter.notifyDataSetChanged();
+        loadFavouritesFromDB();
     }
 
+    private void loadFavouritesFromDB() {
+        favouriteProducts.clear();
+        try {
+            db.open();
+            Cursor cursor = db.getAllFavourites();
+            
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    String id = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_ID));
+                    String name = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_NAME));
+                    String price = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_PRICE));
+                    int image = cursor.getInt(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_IMAGE));
+                    String url = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_IMAGE_URL));
 
-    private List<product> loadFavouritesFromPrefs() {
-        // Loops through all products to find which ones were saved as favorites.
-        List<product> list = new ArrayList<>();
-        SharedPreferences prefs = getActivity().getSharedPreferences("MyFavourites", Context.MODE_PRIVATE);
-        List<product> allProducts = productsdata.getAllProducts();
-
-        for (int i = 0; i < allProducts.size(); i++) {
-            product p = allProducts.get(i);
-            if (prefs.contains("fav_" + p.getId())) {
-                p.setFavourite(true);
-                list.add(p);
+                    product p = new product(Integer.parseInt(id), name, price, "", image);
+                    p.setImageUrl(url);
+                    p.setFavourite(true);
+                    favouriteProducts.add(p);
+                } while (cursor.moveToNext());
+                cursor.close();
             }
+            db.close();
+        } catch (Exception e) {
+            e.printStackTrace();
         }
-        return list;
+        favouritesAdapter.notifyDataSetChanged();
     }
 }

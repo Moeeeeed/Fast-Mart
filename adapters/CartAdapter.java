@@ -1,23 +1,29 @@
 package com.example.a2.adapters;
 
-import android.content.Context;
-import android.content.SharedPreferences;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.bumptech.glide.Glide;
 import com.example.a2.R;
+import com.example.a2.database.FastMartDatabase;
 import com.example.a2.models.CartItem;
 
 import java.util.List;
 
 public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
+    
+    // Use camelCase naming
     private List<CartItem> cartList;
     private CartUpdateListener listener;
+    private FastMartDatabase db;
 
     public interface CartUpdateListener {
         void onCartUpdated();
@@ -31,61 +37,83 @@ public class CartAdapter extends RecyclerView.Adapter<CartAdapter.ViewHolder> {
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
-        // Updated to use the correct layout name from your project (itemcart.xml)
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.itemcart, parent, false);
+        db = new FastMartDatabase(parent.getContext());
         return new ViewHolder(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         CartItem currentItem = cartList.get(position);
-        Context context = holder.itemView.getContext();
         
         holder.tvCartName.setText(currentItem.getProduct().getName());
         holder.tvCartPrice.setText(currentItem.getProduct().getPrice());
         holder.tvQuantity.setText(String.valueOf(currentItem.getQuantity()));
-        holder.ivCartImage.setImageResource(currentItem.getProduct().getImageResId());
+        
+        // Bonus: Use Glide for Cart images
+        if (currentItem.getProduct().getImageUrl() != null && !currentItem.getProduct().getImageUrl().isEmpty()) {
+            Glide.with(holder.itemView.getContext())
+                .load(currentItem.getProduct().getImageUrl())
+                .placeholder(R.drawable.vert)
+                .into(holder.ivCartImage);
+        } else {
+            holder.ivCartImage.setImageResource(currentItem.getProduct().getImageResId());
+        }
 
-        SharedPreferences prefs = context.getSharedPreferences("MyCart", Context.MODE_PRIVATE);
-
-        // INCREASE (+)
+        // INCREASE Quantity (+)
         holder.btnPlus.setOnClickListener(v -> {
-            currentItem.setQuantity(currentItem.getQuantity() + 1);
-            holder.tvQuantity.setText(String.valueOf(currentItem.getQuantity()));
-            saveToMemory(prefs, currentItem);
+            int newQty = currentItem.getQuantity() + 1;
+            currentItem.setQuantity(newQty);
+            holder.tvQuantity.setText(String.valueOf(newQty));
+            
+            db.open();
+            db.updateCartQuantity(String.valueOf(currentItem.getProduct().getId()), newQty);
+            db.close();
+            
             listener.onCartUpdated(); 
         });
 
-        // DECREASE (-)
+        // DECREASE Quantity (-)
         holder.btnMinus.setOnClickListener(v -> {
             if (currentItem.getQuantity() > 1) {
-                currentItem.setQuantity(currentItem.getQuantity() - 1);
-                holder.tvQuantity.setText(String.valueOf(currentItem.getQuantity()));
-                saveToMemory(prefs, currentItem);
+                int newQty = currentItem.getQuantity() - 1;
+                currentItem.setQuantity(newQty);
+                holder.tvQuantity.setText(String.valueOf(newQty));
+                
+                db.open();
+                db.updateCartQuantity(String.valueOf(currentItem.getProduct().getId()), newQty);
+                db.close();
+                
                 listener.onCartUpdated(); 
             }
         });
 
-        // DELETE (3-Dots)
+        // DELETE Item with AlertDialog
         holder.ivCartDelete.setOnClickListener(v -> {
-            // Remove from SharedPreferences
-            prefs.edit().remove("cart_" + currentItem.getProduct().getId()).apply();
+            AlertDialog.Builder builder = new AlertDialog.Builder(holder.itemView.getContext());
+            builder.setTitle("Remove Item");
+            builder.setMessage("Are you sure you want to delete this from your cart?");
             
-            // Remove from screen
-            int currentPos = holder.getAdapterPosition();
-            if (currentPos != RecyclerView.NO_POSITION) {
-                cartList.remove(currentPos); 
-                notifyItemRemoved(currentPos);
-                notifyItemRangeChanged(currentPos, cartList.size());
-                listener.onCartUpdated();
-            }
-        });
-    }
+            builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    db.open();
+                    db.removeFromCart(String.valueOf(currentItem.getProduct().getId()));
+                    db.close();
 
-    private void saveToMemory(SharedPreferences prefs, CartItem item) {
-        String data = item.getProduct().getName() + "," + item.getProduct().getPrice() + "," + 
-                      item.getProduct().getDescription() + "," + item.getProduct().getImageResId() + "," + item.getQuantity();
-        prefs.edit().putString("cart_" + item.getProduct().getId(), data).apply();
+                    int currentPos = holder.getAdapterPosition();
+                    cartList.remove(currentPos);
+                    notifyItemRemoved(currentPos);
+                    notifyItemRangeChanged(currentPos, cartList.size());
+                    
+                    listener.onCartUpdated();
+                    Toast.makeText(holder.itemView.getContext(), "Item Removed", Toast.LENGTH_SHORT).show();
+                }
+            });
+
+            builder.setNegativeButton("No", (dialog, which) -> dialog.dismiss());
+            builder.show();
+        });
     }
 
     @Override

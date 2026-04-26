@@ -1,8 +1,6 @@
 package com.example.a2.fragments;
 
-import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -16,30 +14,33 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 
 import com.example.a2.R;
-import com.example.a2.activities.AuthActivity;
-import com.example.a2.activities.MainActivity;
+import com.example.a2.activities.CompleteProfileActivity;
+import com.google.firebase.auth.FirebaseAuth;
 
 public class SignUpFragment extends Fragment {
 
+    // Use camelCase naming
     EditText etEmail, etPassword, etVerifyPassword;
     Button btnSignup;
+    FirebaseAuth mAuth;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Sets up the UI and the signup button listener.
         View view = inflater.inflate(R.layout.fragmentsignup, container, false);
 
         etEmail = view.findViewById(R.id.etSignupEmail);
         etPassword = view.findViewById(R.id.etSignupPassword);
         etVerifyPassword = view.findViewById(R.id.etSignupVerify);
         btnSignup = view.findViewById(R.id.btnSignup);
+        mAuth = FirebaseAuth.getInstance();
 
         btnSignup.setOnClickListener(v -> {
             String email = etEmail.getText().toString().trim();
             String password = etPassword.getText().toString().trim();
             String verifyPassword = etVerifyPassword.getText().toString().trim();
 
+            // Simple validation
             if (email.isEmpty() || password.isEmpty()) {
                 Toast.makeText(getActivity(), "Please fill all fields", Toast.LENGTH_SHORT).show();
                 return;
@@ -50,13 +51,11 @@ public class SignUpFragment extends Fragment {
                 return;
             }
 
-            SharedPreferences authPrefs = getActivity().getSharedPreferences("FastMartPrefs", Context.MODE_PRIVATE);
-            authPrefs.edit().putString("user.email", email).putString("user.password", password).apply();
-
-            Toast.makeText(getActivity(), "Account created successfully!", Toast.LENGTH_SHORT).show();
-
-            startActivity(new Intent(getActivity(), AuthActivity.class));
-            getActivity().finish();
+            // Move to profile completion to save details later
+            Intent intent = new Intent(getActivity(), CompleteProfileActivity.class);
+            intent.putExtra("EMAIL", email);
+            intent.putExtra("PASSWORD", password);
+            startActivity(intent);
         });
 
         return view;

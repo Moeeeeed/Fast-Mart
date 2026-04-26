@@ -10,6 +10,8 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AppCompatDelegate;
+
 import com.example.a2.R;
 
 public class SplashActivity extends AppCompatActivity {
@@ -19,7 +21,16 @@ public class SplashActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
-        // Sets up the splash screen with a slide-in cart, dropping items, and a fading welcome message.
+        // Apply saved theme
+        SharedPreferences spref = getSharedPreferences("FastMartPrefs", MODE_PRIVATE);
+        boolean isDark = spref.getBoolean("isDarkMode", false);
+        if (isDark) {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
+        } else {
+            AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
+        }
+
+        // Sets up the splash screen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activitysplash);
 
@@ -52,16 +63,27 @@ public class SplashActivity extends AppCompatActivity {
         tvWelcome.startAnimation(fadeIn);
 
         new Handler().postDelayed(() -> {
-            SharedPreferences prefs = getSharedPreferences("FastMartPrefs", MODE_PRIVATE);
-            boolean isFirstTime = prefs.getBoolean("isFirstTime", true);
-           // getSharedPreferences("FastMartPrefs", MODE_PRIVATE).edit().clear().apply();
-
-            if (isFirstTime) {
-                startActivity(new Intent(SplashActivity.this, OnBoardActivity.class));
-            } else {
-                startActivity(new Intent(SplashActivity.this, AuthActivity.class));
-            }
-            finish();
+            checkedAlreadyLogin();
         }, 6500);
+    }
+
+    private void checkedAlreadyLogin() {
+        SharedPreferences spref = getSharedPreferences("FastMartPrefs", MODE_PRIVATE);
+        boolean isFirstTime = spref.getBoolean("isFirstTime", true);
+        boolean isLogin = spref.getBoolean("isLogin", false);
+
+        if (isFirstTime) {
+            startActivity(new Intent(SplashActivity.this, OnBoardActivity.class));
+        } else if (isLogin) {
+            String type = spref.getString("accountType", "Buyer");
+            if ("Seller".equals(type)) {
+                startActivity(new Intent(SplashActivity.this, SellerHomeActivity.class));
+            } else {
+                startActivity(new Intent(SplashActivity.this, MainActivity.class));
+            }
+        } else {
+            startActivity(new Intent(SplashActivity.this, AuthActivity.class));
+        }
+        finish();
     }
 }

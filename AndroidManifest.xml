@@ -2,6 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
+    <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.SEND_SMS" />
 
     <uses-feature android:name="android.hardware.telephony" android:required="false" />
@@ -15,6 +16,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.A2"
+        android:usesCleartextTraffic="true"
         tools:targetApi="31">
 
         <activity
@@ -26,6 +28,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+        android:name=".activities.CompleteProfileActivity"
+        android:exported="false"
+        android:windowSoftInputMode="adjustResize" />
 
         <activity
             android:name=".activities.OnBoardActivity"
@@ -40,6 +46,16 @@
             android:name=".activities.MainActivity"
             android:exported="false"
             android:windowSoftInputMode="adjustPan" />
+
+        <activity
+            android:name=".activities.ChatActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
+
+        <activity
+            android:name=".activities.SellerHomeActivity"
+            android:exported="false"
+            android:windowSoftInputMode="adjustResize" />
 
     </application>
 

@@ -1,8 +1,6 @@
 package com.example.a2.fragments;
 
-import android.content.Context;
-import android.content.Intent;
-import android.content.SharedPreferences;
+import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.view.LayoutInflater;
@@ -20,12 +18,17 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.a2.R;
 import com.example.a2.adapters.CartAdapter;
+import com.example.a2.database.FastMartDatabase;
 import com.example.a2.models.CartItem;
 import com.example.a2.models.product;
-import com.example.a2.models.productsdata;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class CartFragment extends Fragment {
 
@@ -34,17 +37,18 @@ public class CartFragment extends Fragment {
     Button btnCheckout;
     CartAdapter cartAdapter;
     List<CartItem> myCartItems;
+    FastMartDatabase db;
 
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        // Initializes the screen and the list of items in the cart.
         View view = inflater.inflate(R.layout.fragmentcart, container, false);
 
         rvCart = view.findViewById(R.id.rvCart);
         tvTotalPrice = view.findViewById(R.id.tvTotalPrice);
         btnCheckout = view.findViewById(R.id.btnCheckout);
 
+        db = new FastMartDatabase(getContext());
         rvCart.setLayoutManager(new LinearLayoutManager(getContext()));
 
         myCartItems = new ArrayList<>();
@@ -53,7 +57,7 @@ public class CartFragment extends Fragment {
 
         btnCheckout.setOnClickListener(v -> {
             if (myCartItems.size() == 0) {
-                Toast.makeText(getContext(), "Your cart is empty!", Toast.LENGTH_SHORT).show();
+                Toast.makeText(getContext(), getString(R.string.cartEmptyMsg), Toast.LENGTH_SHORT).show();
                 return;
             }
             sendCheckoutSMS();
@@ -64,39 +68,41 @@ public class CartFragment extends Fragment {
 
     @Override
     public void onResume() {
-        // Reloads the cart items from memory whenever the tab is opened.
         super.onResume();
+        loadCartFromDB();
+    }
+
+    private void loadCartFromDB() {
         myCartItems.clear();
-        myCartItems.addAll(loadCartFromPrefs());
+        try {
+            db.open();
+            Cursor cursor = db.getAllCartItems();
+            if (cursor != null && cursor.moveToFirst()) {
+                do {
+                    String id = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_ID));
+                    String name = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_NAME));
+                    String price = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_PRICE));
+                    int image = cursor.getInt(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_IMAGE));
+                    String url = cursor.getString(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_IMAGE_URL));
+                    int qty = cursor.getInt(cursor.getColumnIndexOrThrow(FastMartDatabase.COLUMN_QUANTITY));
+
+                    product p = new product(Integer.parseInt(id), name, price, "", image);
+                    p.setImageUrl(url); // Set the URL for Glide
+                    myCartItems.add(new CartItem(p, qty));
+                } while (cursor.moveToNext());
+                cursor.close();
+            }
+            db.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         cartAdapter.notifyDataSetChanged();
         calculateTotal();
     }
 
-    private List<CartItem> loadCartFromPrefs() {
-        // Uses a simple loop to check which products are currently in the cart.
-        List<CartItem> list = new ArrayList<>();
-        SharedPreferences prefs = getActivity().getSharedPreferences("MyCart", Context.MODE_PRIVATE);
-        List<product> allProducts = productsdata.getAllProducts();
-
-        for (int i = 0; i < allProducts.size(); i++) {
-            product p = allProducts.get(i);
-            String data = prefs.getString("cart_" + p.getId(), null);
-            if (data != null) {
-                String[] parts = data.split(",");
-                if (parts.length == 5) {
-                    int quantity = Integer.parseInt(parts[4]);
-                    list.add(new CartItem(p, quantity));
-                }
-            }
-        }
-        return list;
-    }
-
     private void calculateTotal() {
-        // Loops through the cart items to add up the final price.
         double total = 0.0;
-        for (int i = 0; i < myCartItems.size(); i++) {
-            CartItem item = myCartItems.get(i);
+        for (CartItem item : myCartItems) {
             String rawPrice = item.getProduct().getPrice().replace("$", "");
             try {
                 total += (Double.parseDouble(rawPrice) * item.getQuantity());
@@ -104,33 +110,58 @@ public class CartFragment extends Fragment {
                 e.printStackTrace();
             }
         }
-        tvTotalPrice.setText(String.format("Total: $%.2f", total));
+        tvTotalPrice.setText(getString(R.string.cartTotal) + ": $" + total);
     }
 
     private void sendCheckoutSMS() {
-        // Opens the SMS app with the order summary using an implicit intent.
-        StringBuilder orderSummary = new StringBuilder("FastMart Order Details:\n");
+        StringBuilder orderSummary = new StringBuilder("Order Details:\n");
         double total = 0.0;
 
-        for (int i = 0; i < myCartItems.size(); i++) {
-            CartItem item = myCartItems.get(i);
-            orderSummary.append(item.getQuantity()).append("x ").append(item.getProduct().getName()).append("\n");
-            total += (Double.parseDouble(item.getProduct().getPrice().replace("$", "")) * item.getQuantity());
+        for (CartItem item : myCartItems) {
+            String pricePerItem = item.getProduct().getPrice();
+            orderSummary.append("- ")
+                        .append(item.getProduct().getName())
+                        .append(" (Qty: ")
+                        .append(item.getQuantity())
+                        .append(") Price: ")
+                        .append(pricePerItem)
+                        .append("\n");
+            
+            total += (Double.parseDouble(pricePerItem.replace("$", "")) * item.getQuantity());
         }
-        orderSummary.append(String.format("Total: $%.2f", total));
+        orderSummary.append("Final Total: $" + total);
 
-        Intent intent = new Intent(Intent.ACTION_SENDTO);
+        saveOrderToFirebase(orderSummary.toString(), total);
+
+        android.content.Intent intent = new android.content.Intent(android.content.Intent.ACTION_SENDTO);
         intent.setData(Uri.parse("smsto:+923214441218"));
         intent.putExtra("sms_body", orderSummary.toString());
 
         try {
             startActivity(intent);
-            getActivity().getSharedPreferences("MyCart", Context.MODE_PRIVATE).edit().clear().apply();
+            db.open();
+            for(CartItem item : myCartItems) {
+                db.removeFromCart(String.valueOf(item.getProduct().getId()));
+            }
+            db.close();
+
             myCartItems.clear();
             cartAdapter.notifyDataSetChanged();
             calculateTotal();
         } catch (Exception e) {
-            Toast.makeText(getContext(), "Failed to open SMS app.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(getContext(), getString(R.string.smsFailedMsg), Toast.LENGTH_SHORT).show();
         }
+    }
+
+    private void saveOrderToFirebase(String summary, double total) {
+        String uid = FirebaseAuth.getInstance().getUid();
+        if (uid == null) return;
+        DatabaseReference orderRef = FirebaseDatabase.getInstance().getReference("Orders").push();
+        Map<String, Object> orderMap = new HashMap<>();
+        orderMap.put("buyerId", uid);
+        orderMap.put("summary", summary);
+        orderMap.put("totalPrice", total);
+        orderMap.put("timestamp", System.currentTimeMillis());
+        orderRef.setValue(orderMap);
     }
 }
